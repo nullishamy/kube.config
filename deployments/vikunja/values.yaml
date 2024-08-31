@@ -1,0 +1,15 @@
+api:
+  persistence:
+    data:
+      enabled: true
+      accessMode: ReadWriteOnce
+      size: 10Gi
+      mountPath: /app/vikunja/files
+  env:
+    VIKUNJA_DATABASE_TYPE: "sqlite"
+
+    VIKUNJA_DATABASE_USER: "vikunja"
+    VIKUNJA_DATABASE_PASSWORD: "vikunja"
+    VIKUNJA_DATABASE_NAME: "vikunja"
+postgresql:
+  enabled: false

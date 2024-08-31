@@ -1,0 +1,24 @@
+global:
+  hosts:
+    domain: gitlab.amy.mov
+    https: true
+    gitlab:
+      https: true
+    registry:
+      https: true
+    kas:
+      https: true
+    pages:
+      https: true
+  ingress:
+    configureCertmanager: false
+    enabled: true
+    tls:
+      enabled: true
+      secretName: letsencrypt
+    annotations:
+      traefik.ingress.kubernetes.io/router.entrypoints: web, websecure
+    class: traefik
+    provider: traefik
+nginx-ingress:
+  enabled: false

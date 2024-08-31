@@ -1,0 +1,16 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: alloy-ingress
+  namespace: alloy
+spec:
+  entryPoints:
+    - websecure
+  routes:
+  - match: Host(`alloy.amy.mov`)
+    kind: Rule
+    services:
+    - name: alloy
+      port: 12345
+  tls:
+    certResolver: letsencrypt

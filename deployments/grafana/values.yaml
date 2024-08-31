@@ -1,0 +1,17 @@
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+    - name: Loki
+      type: loki
+      url: http://loki-gateway.loki.svc.cluster.local
+    - name: Prometheus
+      type: prometheus
+      url: http://prometheus-server.prometheus.svc.cluster.local
+
+persistence:
+  type: pvc
+  enabled: true
+
+server:
+  root_url: grafana.amy.mov

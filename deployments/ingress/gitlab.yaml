@@ -1,0 +1,48 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: gitlab-ingress
+  namespace: gitlab
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`gitlab.amy.mov`)
+      services:
+        - kind: Service
+          name: gitlab-webservice-default
+          port: 8181
+    - kind: Rule
+      match: Host(`gitlab.amy.mov`) && PathPrefix(`/admin/sidekiq`)
+      services:
+        - kind: Service
+          name: gitlab-webservice-default
+          port: 8080
+    - kind: Rule
+      match: Host(`minio.amy.mov`)
+      services:
+        - kind: Service
+          name: gitlab-minio-svc
+          port: 9000
+    - kind: Rule
+      match: Host(`registry.amy.mov`)
+      services:
+        - kind: Service
+          name: gitlab-registry
+          port: 5000
+    - kind: Rule
+      match: Host(`kas.amy.mov`)
+      services:
+        - kind: Service
+          name: gitlab-kas
+          port: 8150
+    - kind: Rule
+      match: Host(`kas.amy.mov`) && PathPrefix(`/k8s-proxy`)
+      services:
+        - kind: Service
+          name: gitlab-kas
+          port: 8154
+  tls:
+    secretName: letsencrypt
