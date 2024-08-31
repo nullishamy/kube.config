@@ -13,5 +13,6 @@ persistence:
   type: pvc
   enabled: true
 
-server:
-  root_url: grafana.amy.mov
+grafana.ini:
+  server:
+    root_url: https://grafana.amy.mov
