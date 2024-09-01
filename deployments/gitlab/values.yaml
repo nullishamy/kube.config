@@ -10,6 +10,10 @@ global:
       https: true
     pages:
       https: true
+  pages:
+    enabled: true
+    host: pages.amy.mov
+    namespaceInPath: true
   ingress:
     configureCertmanager: false
     enabled: true
@@ -20,5 +24,31 @@ global:
       traefik.ingress.kubernetes.io/router.entrypoints: web, websecure
     class: traefik
     provider: traefik
+
 nginx-ingress:
   enabled: false
+
+gitlab-runner:
+  gitlabUrl: https://gitlab.amy.mov
+  runners:
+    secret: gitlab-runner-secret
+    config: |
+      [[runners]]
+        name = "Shared Runner"
+        url = "https://gitlab.amy.mov"
+        id = 15
+        executor = "docker"
+        clone_url = "https://gitlab.amy.mov"
+        [runners.kubernetes]
+        image = "ubuntu:22.04"
+        [runners.cache]
+          Type = "s3"
+          Path = "gitlab-runner"
+          Shared = true
+          [runners.cache.s3]
+            ServerAddress = "minio.gitlab.amy.mov"
+            BucketName = "runner-cache"
+            BucketLocation = "us-east-1"
+            Insecure = false
+  rbac:
+    create: true

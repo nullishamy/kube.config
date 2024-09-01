@@ -21,6 +21,12 @@ spec:
           name: gitlab-webservice-default
           port: 8080
     - kind: Rule
+      match: Host(`pages.amy.mov`)
+      services:
+        - kind: Service
+          name: gitlab-gitlab-pages
+          port: 8090
+    - kind: Rule
       match: Host(`minio.amy.mov`)
       services:
         - kind: Service
