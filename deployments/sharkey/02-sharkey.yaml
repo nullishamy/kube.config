@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sharkey
+  namespace: sharkey
+spec:
+  selector:
+    matchLabels:
+      app: sharkey
+  template:
+    metadata:
+      labels:
+        app: sharkey
+    spec:
+      volumes:
+        - name: sharkey-config
+          configMap:
+            name: sharkey-config
+      containers:
+      - name: sharkey
+        image: registry.activitypub.software/transfem-org/sharkey:latest
+        ports:
+          - containerPort: 3000
+        resources:
+          limits:
+            cpu: '3000m'
+            memory: '1Gi'
+        env:
+          - name: MISSKEY_CONFIG_YML
+            value: '/sharkey/.config/default.yaml'
+        volumeMounts:
+        - mountPath: "/sharkey/.config"
+          name: sharkey-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sharkey-svc
+  namespace: sharkey
+spec:
+  selector:
+    app: sharkey
+  ports:
+  - port: 80
+    targetPort: 3000
