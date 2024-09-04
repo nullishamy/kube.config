@@ -1,6 +1,6 @@
 global:
   hosts:
-    domain: gitlab.amy.mov
+    domain: amy.mov
     https: true
     gitlab:
       https: true
@@ -14,6 +14,17 @@ global:
     enabled: true
     host: pages.amy.mov
     namespaceInPath: true
+  email:
+    reply_to: 'do-not-reply@amy.mov'
+    from: 'do-not-reply@amy.mov'
+  smtp:
+    enabled: true
+    address: 'monday.mxrouting.net'
+    user_name: 'do-not-reply@amy.mov'
+    port: 465
+    tls: true
+    password:
+      secret: gitlab-smtp-secret
   ingress:
     configureCertmanager: false
     enabled: true
@@ -29,7 +40,7 @@ nginx-ingress:
   enabled: false
 
 gitlab-runner:
-  gitlabUrl: https://gitlab.amy.mov
+  gitlabUrl: https://amy.mov
   runners:
     secret: gitlab-runner-secret
     config: |
@@ -46,9 +57,8 @@ gitlab-runner:
           Path = "gitlab-runner"
           Shared = true
           [runners.cache.s3]
-            ServerAddress = "minio.gitlab.amy.mov"
+            ServerAddress = "minio.amy.mov"
             BucketName = "runner-cache"
-            BucketLocation = "us-east-1"
             Insecure = false
   rbac:
     create: true
