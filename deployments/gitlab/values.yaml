@@ -1,4 +1,5 @@
 global:
+  ssh: 'ssh.amy.mov'
   hosts:
     domain: amy.mov
     https: true

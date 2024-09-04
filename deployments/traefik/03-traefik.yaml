@@ -37,7 +37,7 @@ spec:
             - --entryPoints.web.address=:80
             - --entryPoints.web.http.redirections.entryPoint.to=websecure
             - --entryPoints.websecure.address=:443
-            - --entryPoints.gitlab-shell.address=:222
+            - --entryPoints.gitlab-shell.address=:22
             - --certificatesResolvers.letsencrypt.acme.httpChallenge.entryPoint=web
             - --certificatesResolvers.letsencrypt.acme.email=spam@amyerskine.me
             # - --certificatesResolvers.letsencrypt.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
@@ -47,7 +47,7 @@ spec:
             - name: websecure
               containerPort: 443
             - name: gitlab-shell
-              containerPort: 222
+              containerPort: 22
             - name: admin
               containerPort: 8080
 ---
@@ -70,6 +70,6 @@ spec:
       port: 443
     - protocol: TCP
       name: gitlab-shell
-      port: 222
+      port: 22
   selector:
     app: traefik
