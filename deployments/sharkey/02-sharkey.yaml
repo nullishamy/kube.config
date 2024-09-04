@@ -13,6 +13,9 @@ spec:
         app: sharkey
     spec:
       volumes:
+        - name: sharkey-data
+          persistentVolumeClaim:
+            claimName: sharkey-volume-claim
         - name: sharkey-config
           configMap:
             name: sharkey-config
@@ -28,9 +31,13 @@ spec:
         env:
           - name: MISSKEY_CONFIG_YML
             value: '/sharkey/.config/default.yaml'
+          - name: MK_VERBOSE
+            value: 'true'
         volumeMounts:
         - mountPath: "/sharkey/.config"
           name: sharkey-config
+        - mountPath: "/sharkey/files"
+          name: sharkey-data
 ---
 apiVersion: v1
 kind: Service
@@ -43,3 +50,17 @@ spec:
   ports:
   - port: 80
     targetPort: 3000
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sharkey-volume-claim
+  namespace: sharkey
+  labels:
+    app: sharkey
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: '100Gi'
