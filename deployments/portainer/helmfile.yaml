@@ -1,0 +1,10 @@
+repositories:
+- name: portainer
+  url: https://portainer.github.io/k8s/
+
+releases:
+- name: portainer
+  namespace: portainer
+  chart: portainer/portainer
+  values:
+    - 'values.yaml'
