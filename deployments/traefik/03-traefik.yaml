@@ -35,6 +35,7 @@ spec:
             - --log.level=DEBUG
             - --log.format=json
             - --entryPoints.web.address=:80
+            - --entryPoints.minecraft.address=:25565
             - --entryPoints.web.http.redirections.entryPoint.to=websecure
             - --entryPoints.websecure.address=:443
             - --entryPoints.gitlab-shell.address=:22
@@ -48,6 +49,8 @@ spec:
               containerPort: 443
             - name: gitlab-shell
               containerPort: 22
+            - name: minecraft
+              containerPort: 25565
             - name: admin
               containerPort: 8080
 ---
@@ -71,5 +74,8 @@ spec:
     - protocol: TCP
       name: gitlab-shell
       port: 22
+    - protocol: TCP
+      name: minecraft
+      port: 25565
   selector:
     app: traefik
