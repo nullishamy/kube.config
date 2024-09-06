@@ -31,7 +31,6 @@ global:
     enabled: true
     tls:
       enabled: true
-      secretName: letsencrypt
     annotations:
       traefik.ingress.kubernetes.io/router.entrypoints: web, websecure
     class: traefik
@@ -41,7 +40,7 @@ nginx-ingress:
   enabled: false
 
 gitlab-runner:
-  gitlabUrl: https://amy.mov
+  gitlabUrl: https://gitlab.amy.mov
   runners:
     secret: gitlab-runner-secret
     config: |
