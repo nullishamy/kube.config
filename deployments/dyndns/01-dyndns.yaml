@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dyndns
+  namespace: dyndns
+spec:
+  selector:
+    matchLabels:
+      app: dyndns
+  template:
+    metadata:
+      labels:
+        app: dyndns
+    spec:
+      # Override Dockerfile "USER" directive to a user that exists
+      securityContext:
+        runAsUser: 1000
+      containers:
+      - name: dyndns
+        image: ghcr.io/enidisepic/cf-dyndns:latest
+        env:
+          - name: CRON_SCHEDULE
+            value: '@every 1h'
+          - name: CF_ZONE_ID
+            value: '1f46af403f5dbb4c179a9daad2c15e0f'
+          - name: CF_ENTRY_NAME
+            value: 'amy.mov'
+          - name: CF_ENTRY_ID
+            value: '6a75f9b4175696fa8091fd825ff8c2cd'
+          - name: CF_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: cf-api-secret
+                key: api-key
+        resources:
+          limits:
+            cpu: '100m'
+            memory: '128Mi'
