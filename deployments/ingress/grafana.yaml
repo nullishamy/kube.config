@@ -13,4 +13,4 @@ spec:
     - name: grafana
       port: 80
   tls:
-    certResolver: letsencrypt
+    secretName: cf-origin

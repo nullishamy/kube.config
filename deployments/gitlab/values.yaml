@@ -28,13 +28,9 @@ global:
       secret: gitlab-smtp-secret
   ingress:
     configureCertmanager: false
-    enabled: true
+    enabled: false
     tls:
       enabled: true
-    annotations:
-      traefik.ingress.kubernetes.io/router.entrypoints: web, websecure
-    class: traefik
-    provider: traefik
 
 nginx-ingress:
   enabled: false

@@ -51,4 +51,4 @@ spec:
           name: gitlab-kas
           port: 8154
   tls:
-    secretName: letsencrypt
+    secretName: cf-origin

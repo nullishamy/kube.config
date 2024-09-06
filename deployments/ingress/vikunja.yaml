@@ -19,4 +19,4 @@ spec:
     - name: vikunja-api
       port: 3456
   tls:
-    certResolver: letsencrypt
+    secretName: cf-origin

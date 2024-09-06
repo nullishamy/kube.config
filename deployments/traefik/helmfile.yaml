@@ -1,0 +1,8 @@
+repositories:
+- name: clustersecret
+  url: https://charts.clustersecret.com
+
+releases:
+- name: clustersecret
+  namespace: clustersecret
+  chart: clustersecret/cluster-secret
