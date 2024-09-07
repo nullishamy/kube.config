@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: calibre
+  namespace: calibre
+spec:
+  selector:
+    matchLabels:
+      app: calibre
+  template:
+    metadata:
+      labels:
+        app: calibre
+    spec:
+      volumes:
+        - name: calibre-data
+          persistentVolumeClaim:
+            claimName: calibre-pvc
+      containers:
+      - name: calibre
+        image: lscr.io/linuxserver/calibre:latest
+        resources:
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        env:
+          - name: CUSTOM_USER
+            value: amy
+          - name: PASSWORD
+            value: amy
+        ports:
+        - containerPort: 7777
+        - containerPort: 8080
+        volumeMounts: 
+        - mountPath: "/config"
+          name: calibre-data
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: calibre-svc
+  namespace: calibre
+spec:
+  selector:
+    app: calibre
+  ports:
+  - port: 7777
+    name: 'web-content-server'
+  - port: 8080
+    name: 'ui'
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: calibre-pvc
+  namespace: calibre
+spec:
+  resources:
+    requests:
+      storage: '15Gi'
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
