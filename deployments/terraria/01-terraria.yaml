@@ -20,14 +20,14 @@ spec:
       - name: terraria
         image: hexlo/terraria-server-docker
         env:
-          - name: world
-            value: '/root/.local/share/Terraria/Worlds/catppuccin.wld'
+          # - name: world
+          #   value: '/root/.local/share/Terraria/Worlds/catppuccin-master.wld'
           - name: autocreate
-            value: '2'
+            value: '3'
           - name: worldname
-            value: 'catppuccin'
+            value: 'catppuccin-master'
           - name: difficulty
-            value: '1'
+            value: '2'
           - name: maxplayers
             value: '8'
           - name: port
@@ -36,8 +36,11 @@ spec:
             value: 'cat'
         resources:
           limits:
+            cpu: '1500m'
+            memory: '5Gi'
+          requests:
             cpu: '500m'
-            memory: '1Gi'
+            memory: '500Mi'
         ports:
         - containerPort: 7777
         volumeMounts:
