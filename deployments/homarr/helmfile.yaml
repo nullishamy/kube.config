@@ -1,0 +1,12 @@
+repositories:
+- name: homarr
+  url: ghcr.io/oben01/charts
+  oci: true
+
+releases:
+- name: homarr
+  namespace: homarr
+  chart: homarr/homarr
+  version: '1.2.6'
+  values:
+    - 'values.yaml'
