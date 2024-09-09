@@ -5,11 +5,29 @@ api:
       accessMode: ReadWriteOnce
       size: 10Gi
       mountPath: /app/vikunja/files
+  ingress:
+    main:
+      enabled: false
   env:
     VIKUNJA_DATABASE_TYPE: "sqlite"
 
     VIKUNJA_DATABASE_USER: "vikunja"
     VIKUNJA_DATABASE_PASSWORD: "vikunja"
     VIKUNJA_DATABASE_NAME: "vikunja"
+    VIKUNJA_DATABASE_PATH: "/app/vikunja/files/vikunja.db"
+
+    VIKUNJA_SERVICE_PUBLICURL: "https://vikunja.amy.mov/api/v1/"
+
+    # FIXME: It isn't generating stuff properly from ^ the public URL. Disable mail for now
+    VIKUNJA_MAILER_ENABLED: "false"
+    VIKUNJA_MAILER_HOST: "monday.mxrouting.net"
+    VIKUNJA_MAILER_PORT: "465"
+    VIKUNJA_MAILER_FROMEMAIL: "do-not-reply@amy.mov"
+    VIKUNJA_MAILER_USERNAME: "do-not-reply@amy.mov"
+    VIKUNJA_MAILER_FORCESSL: "true"
+    VIKUNJA_MAILER_PASSWORD:
+      secretKeyRef:
+        name: vikunja-env
+        key: smtp-password
 postgresql:
   enabled: false
