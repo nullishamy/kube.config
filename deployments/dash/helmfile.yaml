@@ -1,0 +1,10 @@
+repositories:
+- name: dash
+  url: https://kubernetes.github.io/dashboard/
+
+releases:
+- name: dash
+  namespace: dash
+  chart: dash/kubernetes-dashboard
+  values:
+    - 'values.yaml'

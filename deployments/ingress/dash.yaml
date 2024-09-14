@@ -1,0 +1,21 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: dash-ingress
+  namespace: dash
+spec:
+  entryPoints:
+    - websecure
+  routes:
+  - match: Host(`dash.amy.mov`)
+    kind: Rule
+    services:
+    - name: dash-kong-proxy
+      port: 80
+  # - match: Host(`dash.amy.mov`)
+  #   kind: Rule
+  #   services:
+  #   - name: dash-kubernetes-dashboard-web
+  #     port: 8000
+  tls:
+    secretName: cf-origin
