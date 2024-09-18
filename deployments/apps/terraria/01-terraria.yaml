@@ -62,6 +62,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: terraria-pvc
+  namespace: terraria
 spec:
   resources:
     requests:
