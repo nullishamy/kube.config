@@ -13,6 +13,21 @@ deployments:
   - path: apps/clustersecret
   - path: apps/sharkey
   - path: apps/terraria
+  - path: apps/kluctl
+  - git:
+      url: https://github.com/kluctl/kluctl.git
+      subDir: install/controller
+      ref:
+        tag: v2.25.1
+    vars:
+      - values:
+          args:
+            controller_envs:
+              - name: SOPS_AGE_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: kluctl-age-key
+                    key: key
 
 vars:
   - file: secrets.yaml

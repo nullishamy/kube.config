@@ -1,7 +1,6 @@
 keys:
   - &amy 0014C58BECC51E05AA299EE1210827FF59D814B4
+  - &kluctl age1vfu7jazha4tn2xj8620gxur0hjc6h22mncq32hmj3nh2ml2wvvcs7xldcl
 creation_rules:
-  - key_groups:
-      - pgp:
-          - *amy
-
+  - age: *kluctl
+    pgp: *amy

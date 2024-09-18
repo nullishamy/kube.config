@@ -33,6 +33,7 @@
             kluctl
             custom-helmfile
             sops
+            k9s
             custom-kubernetes-helm
           ];
           env = {

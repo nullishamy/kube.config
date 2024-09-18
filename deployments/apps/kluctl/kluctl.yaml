@@ -1,0 +1,16 @@
+apiVersion: gitops.kluctl.io/v1beta1
+kind: KluctlDeployment
+metadata:
+  name: kluctl
+  namespace: kluctl-system
+spec:
+  interval: 1m
+  source:
+    git:
+      url: https://gitlab.amy.mov/amy/kube.config.git
+      path: "./deployments"
+  timeout: 2m
+  target: katto
+  prune: true
+  delete: false
+  manual: false
