@@ -1,0 +1,7 @@
+helmChart:
+  repo: https://charts.clustersecret.com
+  chartName: cluster-secret
+  chartVersion: "0.4.2"
+  updateConstraints: "0.4.*"
+  releaseName: clustersecret
+  namespace: clustersecret

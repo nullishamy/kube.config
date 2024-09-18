@@ -1,0 +1,7 @@
+helmChart:
+  repo: https://grafana.github.io/helm-charts 
+  chartName: alloy
+  chartVersion: "0.7.0"
+  updateConstraints: "0.7.*"
+  releaseName: alloy
+  namespace: alloy

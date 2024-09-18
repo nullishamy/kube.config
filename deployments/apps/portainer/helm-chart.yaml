@@ -1,0 +1,7 @@
+helmChart:
+  repo: https://portainer.github.io/k8s/
+  chartName: portainer
+  chartVersion: "1.0.53"
+  updateConstraints: "1.0.53"
+  releaseName: portainer
+  namespace: portainer

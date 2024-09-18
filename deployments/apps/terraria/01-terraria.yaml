@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: terraria
+  namespace: terraria
+spec:
+  selector:
+    matchLabels:
+      app: terraria
+  template:
+    metadata:
+      labels:
+        app: terraria
+    spec:
+      volumes:
+        - name: terraria-data
+          persistentVolumeClaim:
+            claimName: terraria-pvc
+      containers:
+      - name: terraria
+        image: hexlo/terraria-server-docker
+        env:
+          # - name: world
+          #   value: '/root/.local/share/Terraria/Worlds/catppuccin-master.wld'
+          - name: autocreate
+            value: '3'
+          - name: worldname
+            value: 'catppuccin-master'
+          - name: difficulty
+            value: '2'
+          - name: maxplayers
+            value: '8'
+          - name: port
+            value: '7777'
+          - name: password
+            value: 'cat'
+        resources:
+          limits:
+            cpu: '3500m'
+            memory: '5Gi'
+          requests:
+            cpu: '500m'
+            memory: '500Mi'
+        ports:
+        - containerPort: 7777
+        volumeMounts:
+        - mountPath: "/root/.local/share/Terraria/Worlds"
+          name: terraria-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: terraria-svc
+  namespace: terraria
+spec:
+  selector:
+    app: terraria
+  ports:
+  - port: 7777
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: terraria-pvc
+spec:
+  resources:
+    requests:
+      storage: '15Gi'
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce

@@ -1,0 +1,71 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "cluster-secret.fullname" . }}-role-cluster
+  labels:
+  {{- include "cluster-secret.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+  - clustersecret.io
+  resources:
+  - clusterkopfpeerings
+  verbs:
+  - list
+  - watch
+  - patch
+  - get
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+  - get
+  - patch
+  - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+- apiGroups:
+  - clustersecret.io
+  resources:
+  - clustersecrets
+  verbs:
+  - watch
+  - list
+  - get
+  - patch
+  - update
+  - create
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  - namespaces/status
+  verbs:
+  - watch
+  - list
+  - get
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - watch
+  - list
+  - get
+  - patch
+  - update
+  - create
+  - delete

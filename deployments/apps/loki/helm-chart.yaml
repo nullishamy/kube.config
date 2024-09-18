@@ -1,0 +1,7 @@
+helmChart:
+  repo: https://grafana.github.io/helm-charts 
+  chartName: loki
+  chartVersion: "6.12.0"
+  updateConstraints: "6.12.*"
+  releaseName: loki
+  namespace: loki

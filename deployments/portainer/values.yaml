@@ -1,4 +1,0 @@
-service:
-  type: ClusterIP
-image:
-  tag: 2.21.0

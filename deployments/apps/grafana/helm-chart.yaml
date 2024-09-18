@@ -1,0 +1,7 @@
+helmChart:
+  repo: https://grafana.github.io/helm-charts 
+  chartName: grafana
+  chartVersion: "8.5.1"
+  updateConstraints: "8.5.*"
+  releaseName: grafana
+  namespace: grafana

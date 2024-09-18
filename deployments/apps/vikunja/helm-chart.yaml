@@ -1,0 +1,6 @@
+helmChart:
+  repo: oci://kolaente.dev/vikunja/vikunja
+  chartVersion: 0.4.3
+  updateConstraints: 0.4.*
+  releaseName: vikunja
+  namespace: vikunja

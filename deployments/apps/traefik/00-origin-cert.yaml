@@ -1,0 +1,8 @@
+apiVersion: clustersecret.io/v1
+kind: ClusterSecret
+metadata:
+  name: cf-origin
+type: Opaque
+data:
+  tls.crt: "{{ certs.cf.crt }}"
+  tls.key: "{{ certs.cf.key }}"

@@ -1,0 +1,7 @@
+helmChart:
+  repo: https://charts.gitlab.io/
+  chartName: gitlab
+  chartVersion: '8.3.1'
+  updateConstraints: '8.3.*'
+  releaseName: gitlab
+  namespace: gitlab

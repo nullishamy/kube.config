@@ -1,0 +1,7 @@
+helmChart:
+  repo: https://kubernetes.github.io/dashboard/
+  chartName: kubernetes-dashboard
+  chartVersion: "7.6.1"
+  updateConstraints: "7.6.*"
+  releaseName: dash
+  namespace: dash

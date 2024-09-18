@@ -1,0 +1,4 @@
+discriminator: "{{ target.name }}"
+
+targets:
+  - name: katto

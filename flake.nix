@@ -30,7 +30,9 @@
           }; 
           in with pkgs; [
             kubectl
+            kluctl
             custom-helmfile
+            sops
             custom-kubernetes-helm
           ];
           env = {
