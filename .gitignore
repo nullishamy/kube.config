@@ -1,4 +1,2 @@
 .direnv
 kubeconfig
-
-99-*.yaml

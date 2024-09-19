@@ -1,7 +1,7 @@
 helmChart:
   repo: https://grafana.github.io/helm-charts 
-  chartName: alloy
-  chartVersion: "0.7.0"
-  updateConstraints: "0.7.*"
+  chartName: k8s-monitoring
+  chartVersion: "1.0.0"
+  updateConstraints: "1.0.*"
   releaseName: alloy
   namespace: alloy

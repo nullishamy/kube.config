@@ -23,6 +23,9 @@ deployments:
       - values:
           args:
             controller_envs:
+              # Allow the kluctl operator to decrypt our secrets using the age key we gave it
+              # The key is encrypted with our sops key, meaning the first deploy must be manual, but it must be manual anyways
+              # to install the operator so this is ok
               - name: SOPS_AGE_KEY
                 valueFrom:
                   secretKeyRef:
