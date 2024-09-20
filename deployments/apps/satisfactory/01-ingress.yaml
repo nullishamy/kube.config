@@ -1,0 +1,26 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: satisfactory-ingress
+  namespace: satisfactory
+spec:
+  entryPoints:
+    - satisfactory
+  routes:
+  - match: HostSNI(`*`)
+    services:
+    - name: satisfactory-svc
+      port: 7777
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteUDP
+metadata:
+  name: satisfactory-ingress-udp
+  namespace: satisfactory
+spec:
+  entryPoints:
+    - satisfactory-udp
+  routes:
+  - services:
+    - name: satisfactory-svc
+      port: 6666

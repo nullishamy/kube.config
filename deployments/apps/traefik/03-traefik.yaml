@@ -42,6 +42,8 @@ spec:
             - --entryPoints.web.http.redirections.entryPoint.to=websecure
             - --entryPoints.websecure.address=:443
             - --entryPoints.gitlab-shell.address=:22
+            - --entryPoints.satisfactory.address=:7777/tcp
+            - --entryPoints.satisfactory-udp.address=:7777/udp
           ports:
             - name: web
               containerPort: 80
@@ -51,6 +53,12 @@ spec:
               containerPort: 22
             - name: minecraft
               containerPort: 25565
+            - name: satisfactory
+              protocol: TCP
+              containerPort: 7777
+            - name: satis-udp
+              protocol: UDP
+              containerPort: 7777
             - name: admin
               containerPort: 8080
 ---
@@ -77,5 +85,11 @@ spec:
     - protocol: TCP
       name: minecraft
       port: 25565
+    - protocol: TCP
+      name: satisfactory
+      port: 7777
+    - protocol: UDP
+      name: satisfactory-udp
+      port: 7777
   selector:
     app: traefik
