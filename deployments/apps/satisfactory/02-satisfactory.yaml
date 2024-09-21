@@ -30,8 +30,11 @@ spec:
           #   value: "true"
         resources:
           limits:
-            memory: "2G"
-            cpu: "1000m"
+            memory: "8G"
+            cpu: "3000m"
+          requests:
+            memory: "1G"
+            cpu: "500m"
         volumeMounts:
           - mountPath: /config
             name: satisfactory-data
