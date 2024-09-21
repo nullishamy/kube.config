@@ -26,8 +26,6 @@ spec:
             value: "false"
           - name: "MAXPLAYERS"
             value: "4"
-          # - name: "DEBUG"
-          #   value: "true"
         resources:
           limits:
             memory: "8G"

@@ -20,8 +20,8 @@ spec:
       - name: terraria
         image: hexlo/terraria-server-docker
         env:
-          # - name: world
-          #   value: '/root/.local/share/Terraria/Worlds/catppuccin-master.wld'
+          - name: world
+            value: '/root/.local/share/Terraria/Worlds/catppuccin-master.wld'
           - name: autocreate
             value: '3'
           - name: worldname
