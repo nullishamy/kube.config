@@ -12,6 +12,9 @@ matrix:
   homeserverExtra:
     serve_server_wellknown: true
 
+coturn:
+  enabled: false
+
 ingress:
   enabled: false
   tls: []
