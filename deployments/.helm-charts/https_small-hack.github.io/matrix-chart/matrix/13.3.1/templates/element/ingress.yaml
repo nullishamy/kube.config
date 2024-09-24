@@ -1,0 +1,33 @@
+{{- if .Values.element.ingress.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "matrix.fullname" . }}-element
+  labels:
+    {{- include "matrix.labels" . | nindent 4 }}
+  {{- with .Values.element.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.element.ingress.className }}
+  ingressClassName: {{ .Values.element.ingress.className }}
+  {{- end }}
+  {{- if .Values.element.ingress.tls.enabled }}
+  tls:
+    - hosts:
+      - {{ .Values.element.ingress.host }}
+      secretName: {{ .Values.element.ingress.tls.secretName }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.element.ingress.host }}
+      http:
+        paths:
+          - path: "/"
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: "{{ include "matrix.fullname" . }}-element"
+                port: 
+                  number: {{ .Values.element.service.port }}
+{{- end }}

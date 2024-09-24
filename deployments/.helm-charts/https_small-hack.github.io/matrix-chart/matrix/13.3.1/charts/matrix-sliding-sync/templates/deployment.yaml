@@ -1,0 +1,132 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "matrix-sliding-sync.fullname" . }}
+  labels:
+    {{- include "matrix-sliding-sync.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "matrix-sliding-sync.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "matrix-sliding-sync.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "matrix-sliding-sync.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        {{- if .Values.postgresql.enabled }}
+        - name: postgresql-isready
+          image: {{ .Values.postgresql.image.repository }}:{{ .Values.postgresql.image.tag }}
+          env:
+            - name: PGHOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "matrix-sliding-sync.postgresql.secretName" . }}
+                  key: {{ include "matrix-sliding-sync.postgresql.secretKeys.hostname" . }}
+
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "matrix-sliding-sync.postgresql.secretName" . }}
+                  key: {{ include "matrix-sliding-sync.postgresql.secretKeys.user" . }}
+
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "matrix-sliding-sync.postgresql.secretName" . }}
+                  key: {{ include "matrix-sliding-sync.postgresql.secretKeys.password" . }}
+            {{- if or .Values.postgresql.sslmode .Values.externalDatabase.sslmode }}
+            {{- include "matrix-sliding-sync.postgresql.sslEnvVars" . | nindent 12 }}
+            {{- end }}
+          command:
+            - "sh"
+            - "-c"
+            - "until pg_isready -h $PGHOST -U $PGUSER; do sleep 2; done"
+        {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+          {{- if .Values.livenessProbe.enabled }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if .Values.readinessProbe.enabled }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          {{- end }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+            {{- if and (not .Values.existingEnvSecret) (not .Values.syncv3.existingDbSecret) }}
+            - name: SYNCV3_DB
+              value: {{ include "matrix-sliding-sync.dbConnString" . }}
+            {{- else if .Values.syncv3.existingDbSecret }}
+            - name: SYNCV3_DB
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.syncv3.existingDbSecret }}
+                  key: {{ .Values.syncv3.dbSecretKey }}
+            {{- end }}
+            {{- if .Values.syncv3.existingSyncv3Secret }}
+            - name: SYNCV3_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.syncv3.existingSyncv3Secret }}
+                  key: {{ .Values.syncv3.syncv3SecretKey }}
+            {{- end }}
+          envFrom:
+            - secretRef:
+              {{- if .Values.existingEnvSecret }}
+                name: {{ .Values.existingEnvSecret }}
+              {{- else }}
+                name: {{ include "matrix-sliding-sync.fullname" . }}-env
+              {{- end }}
+
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

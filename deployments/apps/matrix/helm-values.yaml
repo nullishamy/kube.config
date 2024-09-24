@@ -1,0 +1,33 @@
+matrix:
+  serverName: "chat.amy.mov"
+  hostname: "chat.amy.mov"
+  adminEmail: "contact@amyerskine.me"
+  logging:
+    rootLogLevel: DEBUG
+    sqlLogLevel: DEBUG
+    synapseLogLevel: DEBUG
+  registration:
+    enabled: true
+    required3Pids: [ 'email' ]
+  homeserverExtra:
+    serve_server_wellknown: true
+
+ingress:
+  enabled: false
+  tls: []
+
+mail:
+  enabled: true
+  from: "Matrix <do-not-reply@amy.mov>"
+  riotUrl: "matrix.amy.mov"
+
+  relay:
+    enabled: false
+
+  external:
+    port: 587
+
+    host: "monday.mxrouting.net"
+    username: "do-not-reply@amy.mov"
+    password: "{{ secrets.smtp.passwordRaw }}"
+    requireTransportSecurity: true

@@ -1,0 +1,518 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "matrix.fullname" . }}-synapse
+  labels:
+{{ include "matrix.labels" . | indent 4 }}
+{{ include "matrix.synapse.labels" . | indent 4}}
+spec:
+  replicas: {{ .Values.synapse.replicaCount }}
+  revisionHistoryLimit: {{ .Values.synapse.revisionHistoryLimit }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "matrix.name" . }}-synapse
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "matrix.name" . }}-synapse
+        app.kubernetes.io/instance: {{ .Release.Name }}
+      {{- if and (not .Values.bridges.hookshot.existingSecret.registration) (not .Values.matrix.homeserverOverride) }}
+      annotations:
+        # re-roll deployment on config change
+        {{- if and (not .Values.bridges.hookshot.existingSecret.registration) .Values.bridges.hookshot.enabled }}
+        checksum/hookshot-registration: {{ include (print $.Template.BasePath "/bridge-hookshot/secret-registration.yaml") . | sha256sum }}
+        {{- end }}
+        {{- if and (not .Values.bridges.discord_mautrix.existingSecret) .Values.bridges.discord_mautrix.enabled }}
+        checksum/discord-registration: {{ include (print $.Template.BasePath "/bridge-mautrix-discord/secret-registration.yaml") . | sha256sum }}
+        {{- end }}
+        {{- if and (not .Values.bridges.alertmanager.existingSecret) .Values.bridges.alertmanager.enabled }}
+        checksum/alertmanager-registration: {{ include (print $.Template.BasePath "/bridge-alertmanager/secret-registration.yaml") . | sha256sum }}
+        {{- end }}
+        {{- if not .Values.matrix.homeserverOverride }}
+        checksum/synapse-config: {{ include (print $.Template.BasePath "/synapse/initial-config-map.yaml") . | sha256sum }}
+        {{- end }}
+      {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- if .Values.synapse.podSecurityContext.runAsUser }}
+        runAsUser: {{ .Values.synapse.podSecurityContext.runAsUser }}
+        {{- end }}
+        {{- if .Values.synapse.podSecurityContext.runAsGroup }}
+        runAsGroup: {{ .Values.synapse.podSecurityContext.runAsGroup }}
+        {{- end }}
+        {{- if .Values.synapse.podSecurityContext.fsGroup }}
+        fsGroup: {{ .Values.synapse.podSecurityContext.fsGroup }}
+        {{- end}}
+        {{- if .Values.synapse.podSecurityContext.runAsNonRoot }}
+        runAsNonRoot: {{ .Values.synapse.podSecurityContext.runAsNonRoot }}
+        {{- end }}
+      initContainers:
+        {{- if .Values.postgresql.enabled }}
+        - name: postgresql-isready
+          image: {{ .Values.postgresql.image.repository }}:{{ .Values.postgresql.image.tag }}
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "matrix.postgresql.secretName" . }}
+                  key: {{ .Values.postgresql.global.postgresql.auth.secretKeys.databaseUsername }}
+            - name: DATABASE_HOSTNAME
+              {{- if not .Values.postgresql.global.postgresql.auth.existingSecret }}
+              value: {{ template "postgresql.v1.primary.fullname" .Subcharts.postgresql }}
+              {{ else }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "matrix.postgresql.secretName" . }}
+                  key: {{ .Values.postgresql.global.postgresql.auth.secretKeys.databaseHostname }}
+              {{- end }}
+            {{- if .Values.postgresql.sslmode }}
+            - name: PGSSLMODE
+              value: {{ .Values.postgresql.sslmode }}
+            - name: PGSSLCERT
+              value: {{ .Values.postgresql.sslcert }}
+            - name: PGSSLKEY
+              value: {{ .Values.postgresql.sslkey }}
+            - name: PGSSLROOTCERT
+              value: {{ .Values.postgresql.sslrootcert }}
+            {{- end }}
+          command:
+            - "sh"
+            - "-c"
+            - "until pg_isready -h $DATABASE_HOSTNAME -U $POSTGRES_USER; do sleep 2; done"
+        {{- end }}
+        - name: add-secret-values-to-config
+          image: "mikefarah/yq:latest"
+          imagePullPolicy: Always
+          env:
+            {{- if .Values.postgresql.enabled }}
+            - name: DATABASE_HOSTNAME
+              value: {{ template "postgresql.v1.primary.fullname" .Subcharts.postgresql }}
+            - name: DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "matrix.postgresql.secretName" . }}
+                  key: {{ .Values.postgresql.global.postgresql.auth.secretKeys.database }}
+            - name: DATABASE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "matrix.postgresql.secretName" . }}
+                  key: {{ .Values.postgresql.global.postgresql.auth.secretKeys.databaseUsername }}
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "matrix.postgresql.secretName" . }}
+                  key: {{ .Values.postgresql.global.postgresql.auth.secretKeys.userPasswordKey}}
+            {{- else if .Values.externalDatabase.enabled }}
+            - name: DATABASE_HOSTNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "matrix.postgresql.secretName" . }}
+                  key: {{ .Values.externalDatabase.secretKeys.databaseHostname }}
+            - name: DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "matrix.postgresql.secretName" . }}
+                  key: {{ .Values.externalDatabase.secretKeys.database }}
+            - name: DATABASE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "matrix.postgresql.secretName" . }}
+                  key: {{ .Values.externalDatabase.secretKeys.databaseUsername }}
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "matrix.postgresql.secretName" . }}
+                  key: {{ .Values.externalDatabase.secretKeys.userPasswordKey}}
+            {{- end }}
+            {{- if .Values.coturn.enabled }}
+            - name: COTURN_SHARED_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "matrix.coturn.secretName" . }}
+                  key: {{ .Values.coturn.secretKey }}
+            {{- end }}
+            {{- if or .Values.matrix.registration.existingSecret .Values.matrix.registration.sharedSecret .Values.matrix.registration.generateSharedSecret }}
+            - name: REGISTRATION_SHARED_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "matrix.registration.secretName" . }}
+                  key: {{ .Values.matrix.registration.secretKey }}
+            {{- end }}
+            {{- if and .Values.matrix.oidc.enabled .Values.matrix.oidc.existingSecret }}
+            {{- if .Values.matrix.oidc.secretKeys.issuer }}
+            - name: ISSUER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.matrix.oidc.existingSecret }}
+                  key: {{ .Values.matrix.oidc.secretKeys.issuer }}
+            {{- end }}
+            - name: CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.matrix.oidc.existingSecret }}
+                  key: {{ .Values.matrix.oidc.secretKeys.client_id }}
+            - name: CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.matrix.oidc.existingSecret }}
+                  key: {{ .Values.matrix.oidc.secretKeys.client_secret}}
+            {{- if .Values.matrix.oidc.secretKeys.authorization_endpoint}}
+            - name: AUTH_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.matrix.oidc.existingSecret }}
+                  key: {{ .Values.matrix.oidc.secretKeys.authorization_endpoint }}
+            {{- end }}
+            {{- if .Values.matrix.oidc.secretKeys.token_endpoint }}
+            - name: TOKEN_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.matrix.oidc.existingSecret }}
+                  key: {{ .Values.matrix.oidc.secretKeys.token_endpoint }}
+            {{- end }}
+            {{- if .Values.matrix.oidc.secretKeys.userinfo_endpoint }}
+            - name: USERINFO_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.matrix.oidc.existingSecret }}
+                  key: {{ .Values.matrix.oidc.secretKeys.userinfo_endpoint }}
+            {{- end }}
+            {{- end }}
+            {{- if and .Values.matrix.experimental_features.msc3861.enabled .Values.matrix.msc3861ExistingSecret }}
+            {{- if .Values.matrix.msc3861SecretKeys.issuer }}
+            - name: MSC3861_ISSUER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.matrix.msc3861ExistingSecret }}
+                  key: {{ .Values.matrix.msc3861SecretKeys.issuer }}
+            {{- end }}
+            - name: MSC3861_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.matrix.msc3861ExistingSecret }}
+                  key: {{ .Values.matrix.msc3861SecretKeys.client_id }}
+            - name: MSC3861_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.matrix.msc3861ExistingSecret }}
+                  key: {{ .Values.matrix.msc3861SecretKeys.client_secret }}
+            - name: MSC3861_ADMIN_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.matrix.msc3861ExistingSecret }}
+                  key: {{ .Values.matrix.msc3861SecretKeys.admin_token }}
+            {{- if .Values.matrix.msc3861SecretKeys.account_management_url }}
+            - name: MSC3861_ACCOUNT_MANAGEMENT_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.matrix.msc3861ExistingSecret }}
+                  key: {{ .Values.matrix.msc3861SecretKeys.account_management_url }}
+            {{- end }}
+            {{- end }}
+            {{- if and .Values.mail.enabled .Values.mail.external.existingSecret }}
+            - name: SMTP_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.mail.external.existingSecret }}
+                  key: {{ .Values.mail.external.secretKeys.host }}
+            - name: SMTP_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.mail.external.existingSecret }}
+                  key: {{ .Values.mail.external.secretKeys.username }}
+            - name: SMTP_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.mail.external.existingSecret }}
+                  key: {{ .Values.mail.external.secretKeys.password }}
+            {{- end }}
+            {{- if .Values.s3.enabled }}
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.s3.existingSecret }}
+                  key: {{ .Values.s3.secretKeys.accessKey }}
+
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.s3.existingSecret }}
+                  key: {{ .Values.s3.secretKeys.secretKey }}
+            {{- end }}
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              cp /initial/homeserver.yaml /data/homeserver.yaml && \
+              cp /initial/{{ .Values.matrix.serverName }}.log.config /data/ && \
+              {{- if .Values.coturn.enabled }}
+              yq eval -i '.turn_shared_secret = env(COTURN_SHARED_SECRET)' /data/homeserver.yaml && \
+              {{- end }}
+              {{- if or .Values.matrix.registration.existingSecret .Values.matrix.registration.sharedSecret .Values.matrix.registration.generateSharedSecret }}
+              yq eval -i '.registration_shared_secret = env(REGISTRATION_SHARED_SECRET)' /data/homeserver.yaml && \
+              {{- end }}
+              {{- if and .Values.matrix.oidc.enabled .Values.matrix.oidc.existingSecret }}
+              yq eval -i '.oidc_providers[0].issuer = env(ISSUER)' /data/homeserver.yaml && \
+              yq eval -i '.oidc_providers[0].client_id = env(CLIENT_ID)' /data/homeserver.yaml && \
+              yq eval -i '.oidc_providers[0].client_secret = env(CLIENT_SECRET)' /data/homeserver.yaml && \
+              {{- if .Values.matrix.oidc.secretKeys.authorization_endpoint }}
+              yq eval -i '.oidc_providers[0].authorization_endpoint = env(AUTH_ENDPOINT)' /data/homeserver.yaml && \
+              {{- end }}
+              {{- if .Values.matrix.oidc.secretKeys.token_endpoint }}
+              yq eval -i '.oidc_providers[0].token_endpoint = env(TOKEN_ENDPOINT)' /data/homeserver.yaml && \
+              {{- end }}
+              {{- if .Values.matrix.oidc.secretKeys.userinfo_endpoint }}
+              yq eval -i '.oidc_providers[0].userinfo_endpoint = env(USERINFO_ENDPOINT)' /data/homeserver.yaml && \
+              {{- end }}
+              {{- end }}
+              {{- if and .Values.matrix.experimental_features.msc3861.enabled .Values.matrix.msc3861ExistingSecret }}
+              {{- if .Values.matrix.msc3861SecretKeys.issuer }}
+              yq eval -i '.experimental_features.msc3861.issuer = env(MSC3861_ISSUER)' /data/homeserver.yaml && \
+              {{- end }}
+              {{- if .Values.matrix.msc3861SecretKeys.client_id }}
+              yq eval -i '.experimental_features.msc3861.client_id = env(MSC3861_CLIENT_ID)' /data/homeserver.yaml && \
+              {{- end }}
+              yq eval -i '.experimental_features.msc3861.client_secret = env(MSC3861_CLIENT_SECRET)' /data/homeserver.yaml && \
+              yq eval -i '.experimental_features.msc3861.admin_token = env(MSC3861_ADMIN_TOKEN)' /data/homeserver.yaml && \
+              {{- if .Values.matrix.msc3861SecretKeys.account_management_url }}
+              yq eval -i '.experimental_features.msc3861.account_management_url = env(MSC3861_ACCOUNT_MANAGEMENT_URL)' /data/homeserver.yaml && \
+              {{- end }}
+              {{- end }}
+              {{- if .Values.s3.enabled }}
+              yq eval -i '.media_storage_providers[0].config.access_key_id = env(AWS_ACCESS_KEY_ID)' /data/homeserver.yaml && \
+              yq eval -i '.media_storage_providers[0].config.secret_access_key = env(AWS_SECRET_ACCESS_KEY)' /data/homeserver.yaml && \
+              {{- end }}
+              {{- if and .Values.mail.enabled .Values.mail.external.existingSecret }}
+              yq eval -i '.email.smtp_host = env(SMTP_HOST)' /data/homeserver.yaml && \
+              yq eval -i '.email.smtp_user = env(SMTP_USER)' /data/homeserver.yaml && \
+              yq eval -i '.email.smtp_pass = env(SMTP_PASS)' /data/homeserver.yaml && \
+              {{- end }}
+              {{- if and .Values.matrix.security.trustedKeyServersExistingSecret (not .Values.matrix.security.trustedKeyServers) }}
+              yq eval-all --inplace 'select(fileIndex == 0) * select(fileIndex == 1)' /data/homeserver.yaml /key-servers/{{ .Values.matrix.security.trustedKeyServersSecretKey }} && \
+              echo "Trusted key server merge finished." && \
+              {{- end }}
+              yq eval -i '.database.args.host = env(DATABASE_HOSTNAME)' /data/homeserver.yaml && \
+              yq eval -i '.database.args.database = env(DATABASE)' /data/homeserver.yaml && \
+              yq eval -i '.database.args.user = env(DATABASE_USERNAME)' /data/homeserver.yaml && \
+              yq eval -i '.database.args.password = env(DATABASE_PASSWORD)' /data/homeserver.yaml
+          volumeMounts:
+            {{- if and .Values.matrix.security.trustedKeyServersExistingSecret (not .Values.matrix.security.trustedKeyServers) }}
+            - name: trusted-key-servers
+              mountPath: "/key-servers"
+            {{- end }}
+            - name: synapse-initial-config
+              mountPath: "/initial"
+            - name: synapse-config
+              mountPath: /data
+      # generate signing key only on fresh install
+      {{- if .Release.IsInstall }}
+        - name: generate-signing-key
+          image: {{ include "matrix.image" . }}
+          imagePullPolicy: {{ .Values.synapse.image.pullPolicy }}
+          env:
+            - name: SYNAPSE_SERVER_NAME
+              value: {{ .Values.matrix.serverName }}
+            - name: SYNAPSE_REPORT_STATS
+              value: {{ .Values.matrix.telemetry | ternary "yes" "no" | quote }}
+          command: ["python"]
+          args:
+            - "-m"
+            - "synapse.app.homeserver"
+            - "--config-path"
+            - "/data/homeserver.yaml"
+            - "--keys-directory"
+            - "/data/keys"
+            - "--generate-keys"
+          volumeMounts:
+            - name: synapse-config
+              mountPath: /data
+            - name: signing-key
+              mountPath: /data/keys
+        {{- if .Values.s3.enabled }}
+        - name: pip-install-extra-packages
+          image: {{ include "matrix.image" . }}
+          imagePullPolicy: {{ .Values.synapse.image.pullPolicy }}
+          env:
+            - name: SYNAPSE_SERVER_NAME
+              value: {{ .Values.matrix.serverName }}
+            - name: SYNAPSE_REPORT_STATS
+              value: {{ .Values.matrix.telemetry | ternary "yes" "no" | quote }}
+            - name: PYTHONUSERBASE
+              value: /data/extra_pip_packages
+            - name: PIP_CACHE_DIR
+              value: /tmp
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              pip install --user synapse-s3-storage-provider
+          volumeMounts:
+            - name: synapse-config
+              mountPath: /data
+            - name: signing-key
+              mountPath: /data/keys
+            - name: extra-packages
+              mountPath: /data/extra_pip_packages
+          {{- end }}
+      {{- end }} {{/* end if .Release.IsInstall */}}
+      containers:
+        - name: "synapse"
+          image: {{ include "matrix.image" . }}
+          imagePullPolicy: {{ .Values.synapse.image.pullPolicy }}
+          env:
+            {{- if .Values.synapse.securityContext.env }}
+            {{- if .Values.synapse.securityContext.runAsUser }}
+            - name: UID
+              value: "{{ .Values.synapse.securityContext.runAsUser }}"
+            {{- end }}
+            {{- if .Values.synapse.securityContext.runAsGroup }}
+            - name: GID
+              value: "{{ .Values.synapse.securityContext.runAsGroup }}"
+            {{- end }}
+            {{- end }}
+            {{- if .Values.externalDatabase.sslmode }}
+            - name: PGSSLMODE
+              value: {{ .Values.externalDatabase.sslmode }}
+            - name: PGSSLCERT
+              value: {{ .Values.externalDatabase.sslcert }}
+            - name: PGSSLKEY
+              value: {{ .Values.externalDatabase.sslkey }}
+            - name: PGSSLROOTCERT
+              value: {{ .Values.externalDatabase.sslrootcert }}
+            {{- end }}
+            {{- if .Values.s3.enabled }}
+            - name: PYTHONPATH
+              value: "/usr/local/lib/python3.11/site-packages:/data/extra_pip_packages/lib/python3.11/site-packages"
+            {{- end }}
+            {{- if .Values.synapse.extraEnv }}
+            {{- toYaml .Values.synapse.extraEnv | nindent 12 }}
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: 8008
+              protocol: TCP
+            {{- if .Values.synapse.metrics.enabled }}
+            - name: metrics
+              containerPort: {{ .Values.synapse.metrics.port }}
+              protocol: TCP
+            {{- end }}
+          volumeMounts:
+            - name: synapse-config
+              mountPath: /data
+            - name: signing-key
+              mountPath: /data/keys
+            - name: media-store
+              mountPath: /data/media_store
+            {{- if .Values.s3.enabled }}
+            - name: extra-packages
+              mountPath: /data/extra_pip_packages
+            {{- end }}
+            {{- if or .Values.bridges.hookshot.enabled .Values.bridges.whatsapp.enabled .Values.bridges.discord.enabled .Values.bridges.discord_mautrix.enabled .Values.bridges.irc.enabled .Values.bridges.alertmanager.enabled }}
+            - name: bridges
+              mountPath: /bridges
+              readOnly: true
+            {{- end }}
+            - name: uploads
+              mountPath: /data/uploads
+            - name: tmp
+              mountPath: /tmp
+            {{- if gt (len .Values.synapse.extraVolumeMounts) 0 }}
+            {{- toYaml .Values.synapse.extraVolumeMounts | nindent 12 }}
+            {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /_matrix/static/
+              port: http
+            {{- if .Values.synapse.probes.readiness }}
+            {{- toYaml .Values.synapse.probes.readiness | nindent 12 }}
+            {{- end }}
+          startupProbe:
+            httpGet:
+              path: /_matrix/static/
+              port: http
+            {{- if .Values.synapse.probes.startup }}
+            {{- toYaml .Values.synapse.probes.startup | nindent 12 }}
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /_matrix/static/
+              port: http
+            {{- if .Values.synapse.probes.liveness }}
+            {{- toYaml .Values.synapse.probes.liveness | nindent 12 }}
+            {{- end }}
+          securityContext:
+            capabilities:
+              drop:
+                - ALL
+            runAsGroup: {{ .Values.synapse.securityContext.runAsGroup }}
+            runAsUser: {{ .Values.synapse.securityContext.runAsUser }}
+            runAsNonRoot: {{ .Values.synapse.securityContext.runAsNonRoot }}
+            readOnlyRootFilesystem: {{ .Values.synapse.securityContext.readOnlyRootFilesystem }}
+            allowPrivilegeEscalation: {{ .Values.synapse.securityContext.allowPrivilegeEscalation }}
+          {{- with .Values.synapse.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        {{- if and .Values.matrix.security.trustedKeyServersExistingSecret (not .Values.matrix.security.trustedKeyServers) }}
+        - name: trusted-key-servers
+          secret:
+            secretName: {{ .Values.matrix.security.trustedKeyServersExistingSecret }}
+        {{- end }}
+        - name: synapse-initial-config
+          configMap:
+            name: {{ include "matrix.fullname" . }}-initial-synapse-config
+        - name: synapse-config
+          persistentVolumeClaim:
+            {{- if not .Values.volumes.synapseConfig.existingClaim }}
+            claimName: {{ include "matrix.fullname" . }}-synapse-config
+            {{ else }}
+            claimName: {{ .Values.volumes.synapseConfig.existingClaim }}
+            {{- end }}
+        - name: signing-key
+          persistentVolumeClaim:
+            {{- if not .Values.volumes.signingKey.existingClaim }}
+            claimName: {{ include "matrix.fullname" . }}-signing-key
+            {{ else }}
+            claimName: {{ .Values.volumes.signingKey.existingClaim }}
+            {{- end }}
+        {{- if .Values.s3.enabled }}
+        - name: extra-packages
+          persistentVolumeClaim:
+            {{- if .Values.volumes.extraPipPackages.existingClaim }}
+            claimName: {{ .Values.volumes.extraPipPackages.existingClaim }}
+            {{ else }}
+            claimName: {{ include "matrix.fullname" . }}-extra-pip-packages
+            {{- end }}
+        {{- end }}
+        - name: media-store
+          persistentVolumeClaim:
+            {{- if not .Values.volumes.media.existingClaim }}
+            claimName: {{ include "matrix.fullname" . }}-media-store
+            {{ else }}
+            claimName: {{ .Values.volumes.media.existingClaim }}
+            {{- end }}
+        {{- if or .Values.bridges.hookshot.enabled .Values.bridges.whatsapp.enabled .Values.bridges.discord.enabled .Values.bridges.discord_mautrix.enabled .Values.bridges.irc.enabled .Values.bridges.alertmanager.enabled }}
+        - name: bridges
+          persistentVolumeClaim:
+            {{- if not .Values.bridges.volume.existingClaim }}
+            claimName: {{ include "matrix.fullname" . }}-bridges
+            {{ else }}
+            claimName: {{ .Values.bridges.volume.existingClaim }}
+            {{- end }}
+        {{- end }}
+        # Ephemeral in-progress uploads
+        - name: uploads
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+        {{- if gt (len .Values.synapse.extraVolumes) 0 }}
+        {{ toYaml .Values.synapse.extraVolumes | nindent 8}}
+        {{- end }}

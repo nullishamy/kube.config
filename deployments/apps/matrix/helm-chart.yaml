@@ -1,0 +1,7 @@
+helmChart:
+  repo: https://zekker6.github.io/helm-charts/
+  chartName: matrix
+  chartVersion: "2.57.0"
+  updateConstraints: "2.56.*"
+  releaseName: matrix
+  namespace: matrix-chat

@@ -1,0 +1,45 @@
+{{- if not .Values.existingEnvSecret }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "matrix-sliding-sync.fullname" . }}-env
+data:
+  {{- if and (not .Values.syncv3.existingSyncv3Secret) .Values.syncv3.secret }}
+  SYNCV3_SECRET: {{ .Values.syncv3.secret | b64enc | quote }}
+  {{- else if and (not .Values.syncv3.existingSyncv3Secret) (not .Values.syncv3.secret) }}
+  SYNCV3_SECRET: {{ randAlphaNum 32 | b64enc | quote }}
+  {{- end }}
+  SYNCV3_SERVER: {{ .Values.syncv3.server | b64enc | quote }}
+  SYNCV3_BINDADDR: {{ .Values.syncv3.bindaddr | b64enc | quote }}
+  {{ with .Values.syncv3.tlsCert }}
+  SYNCV3_TLS_CERT: {{ . | b64enc | quote }}
+  {{- end }}
+  {{ with .Values.syncv3.tlsKey }}
+  SYNCV3_TLS_KEY: {{ . | b64enc | quote }}
+  {{- end }}
+  {{ with .Values.syncv3.pprof }}
+  SYNCV3_PPROF: {{ . | b64enc | quote }}
+  {{- end }}
+  {{ with .Values.syncv3.prom }}
+  SYNCV3_PROM: {{ . | b64enc | quote }}
+  {{- end }}
+  {{ if not .Values.syncv3.otlp.existingSecret }}
+  {{ with .Values.syncv3.otlp.url }}
+  SYNCV3_OTLP_URL: {{ . | b64enc | quote }}
+  {{- end }}
+  {{ with .Values.syncv3.otlp.username }}
+  SYNCV3_OTLP_USERNAME: {{ . | b64enc | quote }}
+  {{- end }}
+  {{ with .Values.syncv3.otlp.password }}
+  SYNCV3_OTLP_PASSWORD: {{ . | b64enc | quote }}
+  {{- end }}
+  {{- end }}
+  {{ with .Values.syncv3.sentryDsn }}
+  SYNCV3_SENTRY_DSN: {{ . | b64enc | quote }}
+  {{- end }}
+  SYNCV3_LOG_LEVEL: {{ .Values.syncv3.logLevel | b64enc | quote }}
+  {{ with .Values.syncv3.maxDbConn }}
+  SYNCV3_MAX_DB_CONN: {{ . | b64enc | quote }}
+  {{- end }}
+{{- end }}

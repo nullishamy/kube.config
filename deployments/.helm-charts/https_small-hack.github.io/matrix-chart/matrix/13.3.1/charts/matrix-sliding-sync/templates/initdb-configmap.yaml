@@ -1,0 +1,13 @@
+{{- if .Values.postgresql.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "matrix-sliding-sync.fullname" . }}-postgresql-initdb
+  labels:
+  {{ include "matrix-sliding-sync.labels" . | nindent 4}}
+data:
+  matrix.sql: |
+    CREATE DATABASE matrix ENCODING 'UTF8' LOCALE 'C' TEMPLATE template0 OWNER {{ .Values.postgresql.global.postgresql.auth.username }};
+    GRANT ALL PRIVILEGES ON DATABASE matrix-sliding-sync TO {{ .Values.postgresql.global.postgresql.auth.username }};
+    GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO {{ .Values.postgresql.global.postgresql.auth.username }};
+{{- end }}

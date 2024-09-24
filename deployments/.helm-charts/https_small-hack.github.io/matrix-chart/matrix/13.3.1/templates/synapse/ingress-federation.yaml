@@ -1,0 +1,33 @@
+{{- if .Values.matrix.federation.ingress.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "matrix.fullname" . }}-synapse-federation
+  labels:
+    {{- include "matrix.labels" . | nindent 4 }}
+  {{- with .Values.matrix.federation.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.element.ingress.className }}
+  ingressClassName: {{ .Values.element.ingress.className }}
+  {{- end }}
+  {{- if .Values.matrix.federation.ingress.tls.enabled }}
+  tls:
+    - hosts:
+      - {{ .Values.matrix.federation.ingress.host }}
+      secretName: matrix-federation-tls
+  {{- end }}
+  rules:
+    - host: {{ .Values.matrix.federation.ingress.host }}
+      http:
+        paths:
+          - path: "/"
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: "{{ include "matrix.fullname" . }}-synapse-federation"
+                port: 
+                  number: {{ .Values.synapse.service.federation.port }}
+{{- end }}

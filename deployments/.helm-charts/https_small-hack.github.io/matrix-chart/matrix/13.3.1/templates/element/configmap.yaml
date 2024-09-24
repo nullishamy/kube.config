@@ -1,0 +1,107 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "matrix.fullname" . }}-element-config
+  labels:
+{{ include "matrix.labels" . | nindent 4}}
+{{ include "matrix.element.labels" . | indent 4}}
+data:
+  config.json: |
+    {
+      "default_server_config": {
+        "m.homeserver": {
+          "base_url": {{ include "matrix.baseUrl" . | quote }}
+        }
+      },
+      {{/*"default_server_name": {{ include "matrix.baseUrl" . | quote }},*/}}
+      "brand": {{ .Values.element.branding.brand | quote }},
+      "branding": {
+        {{- if .Values.element.branding.welcomeBackgroundUrl }}
+        "welcomeBackgroundUrl": {{ .Values.element.branding.welcomeBackgroundUrl | quote }}{{ if .Values.element.branding.authHeaderLogoUrl }},{{- end }}
+        {{- end }}
+        {{- if .Values.element.branding.authHeaderLogoUrl }}
+        "authHeaderLogoUrl": {{ .Values.element.branding.authHeaderLogoUrl | quote }}{{ if .Values.element.branding.authFooterLinks }},{{- end }}
+        {{- end }}
+        {{- if .Values.element.branding.authFooterLinks }}
+        "authFooterLinks": {{ .Values.element.branding.authFooterLinks | toJson }}
+        {{- end }}
+      },
+      {{- if .Values.element.integrations.enabled }}
+      "integrations_ui_url": {{ .Values.element.integrations.ui | quote }},
+      "integrations_rest_url": {{ .Values.element.integrations.api | quote }},
+      "integrations_widgets_urls": {{ .Values.element.integrations.widgets | toJson }},
+      {{- end }}
+      {{- if .Values.element.labs }} {{/* if not empty */}}
+      "showLabsSettings": true,
+      {{- else }}
+      "showLabsSettings": false,
+      {{- end }}
+      "features": {
+        {{- if .Values.element.labs }}
+        {{- range initial .Values.element.labs }}
+        {{ . | quote }}: "labs",
+        {{- end }}
+        {{ last .Values.element.labs | quote }}: "labs"
+        {{- end }}
+      },
+      "roomDirectory": {
+        "servers": {{ .Values.element.roomDirectoryServers | toJson }}
+      },
+      {{- if .Values.element.welcomeUserId }}
+      "welcomeUserId": {{ .Values.element.welcomeUserId | quote }},
+      {{- end }}
+      "permalinkPrefix": {{ .Values.element.permalinkPrefix | quote }}
+    }
+
+  nginx.conf: |
+    worker_processes  auto;
+
+    error_log  /var/log/nginx/error.log warn;
+    pid        /var/run/pid/nginx.pid;
+
+    events {
+      worker_connections  1024;
+    }
+
+    http {
+      include       /etc/nginx/mime.types;
+      default_type  application/octet-stream;
+
+      log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+      '$status $body_bytes_sent "$http_referer" '
+      '"$http_user_agent" "$http_x_forwarded_for"';
+
+      access_log  /var/log/nginx/access.log  main;
+
+      sendfile        on;
+      #tcp_nopush     on;
+
+      keepalive_timeout  65;
+
+      #gzip  on;
+
+      include /etc/nginx/conf.d/*.conf;
+    }
+
+  default.conf: |
+    server {
+      listen       8080;
+      server_name  localhost;
+
+      #charset koi8-r;
+      #access_log  /var/log/nginx/host.access.log  main;
+
+      location / {
+          root   /usr/share/nginx/html;
+          index  index.html index.htm;
+      }
+
+      #error_page  404              /404.html;
+
+      # redirect server error pages to the static page /50x.html
+      #
+      error_page   500 502 503 504  /50x.html;
+      location = /50x.html {
+          root   /usr/share/nginx/html;
+      }
+    }

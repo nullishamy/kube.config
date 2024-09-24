@@ -15,6 +15,7 @@ deployments:
   - path: apps/terraria
   - path: apps/kluctl
   - path: apps/satisfactory
+  - path: apps/matrix
   - git:
       url: https://github.com/kluctl/kluctl.git
       subDir: install/controller

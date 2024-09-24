@@ -1,0 +1,14 @@
+apiVersion: v2
+appVersion: sha-206d45b
+dependencies:
+- condition: postgresql.enabled
+  name: postgresql
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 15.5.2
+description: A Helm chart for deploying the matrix authentication service on Kubernetes
+maintainers:
+- name: jessebot
+  url: https://github.com/jessebot
+name: matrix-authentication-service
+type: application
+version: 0.8.1
