@@ -3,9 +3,9 @@ matrix:
   hostname: "chat.amy.mov"
   adminEmail: "contact@amyerskine.me"
   logging:
-    rootLogLevel: DEBUG
-    sqlLogLevel: DEBUG
-    synapseLogLevel: DEBUG
+    rootLogLevel: INFO
+    sqlLogLevel: INFO
+    synapseLogLevel: INFO
   registration:
     enabled: true
     required3Pids: [ 'email' ]
