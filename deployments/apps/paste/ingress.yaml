@@ -1,0 +1,16 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: paste-ingress
+  namespace: paste
+spec:
+  entryPoints:
+    - websecure
+  routes:
+  - match: Host(`paste.amy.mov`)
+    kind: Rule
+    services:
+    - name: paste-svc
+      port: 80
+  tls:
+    secretName: cf-origin

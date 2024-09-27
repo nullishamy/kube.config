@@ -16,6 +16,7 @@ deployments:
   - path: apps/kluctl
   - path: apps/satisfactory
   - path: apps/matrix
+  - path: apps/paste
   - git:
       url: https://github.com/kluctl/kluctl.git
       subDir: install/controller
