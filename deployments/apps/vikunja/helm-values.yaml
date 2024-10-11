@@ -11,6 +11,8 @@ api:
   env:
     VIKUNJA_DATABASE_TYPE: "sqlite"
 
+    VIKUNJA_LOG_LEVEL: "DEBUG"
+
     VIKUNJA_DATABASE_USER: "vikunja"
     VIKUNJA_DATABASE_PASSWORD: "vikunja"
     VIKUNJA_DATABASE_NAME: "vikunja"
