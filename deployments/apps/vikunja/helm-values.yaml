@@ -16,7 +16,7 @@ api:
     VIKUNJA_DATABASE_NAME: "vikunja"
     VIKUNJA_DATABASE_PATH: "/app/vikunja/files/vikunja.db"
 
-    VIKUNJA_SERVICE_PUBLICURL: "https://vikunja.amy.mov/api/v1/"
+    VIKUNJA_SERVICE_PUBLICURL: "https://vikunja.amy.mov/"
 
     # FIXME: It isn't generating stuff properly from ^ the public URL. Disable mail for now
     VIKUNJA_MAILER_ENABLED: "true"
