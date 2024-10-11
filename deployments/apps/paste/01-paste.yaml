@@ -21,7 +21,6 @@ spec:
         image: quxfoo/wastebin:latest
         ports:
           - containerPort: 8088
-        env:
         resources:
           limits:
             cpu: '1000m'

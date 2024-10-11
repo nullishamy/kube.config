@@ -19,7 +19,7 @@ api:
     VIKUNJA_SERVICE_PUBLICURL: "https://vikunja.amy.mov/api/v1/"
 
     # FIXME: It isn't generating stuff properly from ^ the public URL. Disable mail for now
-    VIKUNJA_MAILER_ENABLED: "false"
+    VIKUNJA_MAILER_ENABLED: "true"
     VIKUNJA_MAILER_HOST: "monday.mxrouting.net"
     VIKUNJA_MAILER_PORT: "465"
     VIKUNJA_MAILER_FROMEMAIL: "do-not-reply@amy.mov"
