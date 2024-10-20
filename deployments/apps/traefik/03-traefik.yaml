@@ -27,7 +27,6 @@ spec:
               memory: "512Mi"
               cpu: "500m"
           args:
-            - --api.insecure
             - --accesslog
 
             - --providers.kubernetesingress
@@ -42,6 +41,7 @@ spec:
             - --entryPoints.web.http.redirections.entryPoint.to=websecure
             - --entryPoints.websecure.address=:443
             - --entryPoints.gitlab-shell.address=:22
+            - --entryPoints.factorio.address=:30000
             - --entryPoints.satisfactory.address=:7777/tcp
             - --entryPoints.satisfactory-udp.address=:7777/udp
           ports:
@@ -56,11 +56,12 @@ spec:
             - name: satisfactory
               protocol: TCP
               containerPort: 7777
+            - name: factorio
+              protocol: TCP
+              containerPort: 30000
             - name: satis-udp
               protocol: UDP
               containerPort: 7777
-            - name: admin
-              containerPort: 8080
 ---
 apiVersion: v1
 kind: Service
@@ -74,9 +75,6 @@ spec:
       name: web
       port: 80
     - protocol: TCP
-      name: admin
-      port: 8080
-    - protocol: TCP
       name: websecure
       port: 443
     - protocol: TCP
@@ -88,6 +86,9 @@ spec:
     - protocol: TCP
       name: satisfactory
       port: 7777
+    - protocol: TCP
+      name: factorio
+      port: 30000
     - protocol: UDP
       name: satisfactory-udp
       port: 7777

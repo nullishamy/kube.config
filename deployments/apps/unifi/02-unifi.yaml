@@ -1,0 +1,127 @@
+# https://blog.stabl.one/posts/006-unifi-controller-kubernetes/ bless
+# https://github.com/jacobalberty/unifi-docker/blob/master/Side-Projects.md#other-techniques-for-adoption bless2
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: unifi
+  namespace: unifi
+spec:
+  selector:
+    matchLabels:
+      app: unifi
+  serviceName: unifi
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: unifi
+    spec:
+      securityContext:
+        runAsUser: 999
+        runAsGroup: 999
+      initContainers:
+      - name: fix-permissions
+        image: busybox
+        command: ["sh", "-c", "chown -R 999:999 /unifi"]
+        securityContext:
+          runAsUser: 0
+          runAsNonRoot: false
+        volumeMounts:
+          - name: unifi
+            mountPath: /unifi
+      containers:
+        - name: unifi
+          image: jacobalberty/unifi:v8.5.6
+          env:
+            - name: TZ
+              value: EUROPE/BERLIN
+            - name: UNIFI_STDOUT
+              value: "true"
+          ports:
+            - containerPort: 8080
+              name: inform
+            - containerPort: 8443
+              name: ui
+            - containerPort: 3478
+              name: stun
+              protocol: UDP
+            - containerPort: 10001
+              name: dns
+              protocol: UDP
+            - containerPort: 1900
+              name: l2
+              protocol: UDP
+          volumeMounts:
+            - name: unifi
+              mountPath: /unifi
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            requests:
+              memory: 500Mi
+              cpu: 250m
+            limits:
+              memory: 2Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: unifi
+          persistentVolumeClaim:
+            claimName: unifi
+      automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: unifi
+  namespace: unifi
+  labels:
+    app: unifi
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: '25Gi'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: unifi-svc
+  namespace: unifi
+spec:
+  type: NodePort
+  externalIPs:
+  - 192.168.1.101
+  selector:
+    app: unifi
+  ports:
+  - port: 8080
+    protocol: TCP
+    name: "unifi-inform"
+    targetPort: 8080
+  - port: 8443
+    protocol: TCP
+    name: "unifi-ui"
+    targetPort: 8443
+  - port: 3478
+    name: "unifi-stun"
+    protocol: UDP
+    targetPort: 3478
+  - port: 10001
+    name: "dns"
+    protocol: UDP
+    targetPort: 10001
+  - port: 1900
+    name: "l2"
+    protocol: UDP
+    targetPort: 1900
+---
